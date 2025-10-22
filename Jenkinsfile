@@ -17,12 +17,11 @@ pipeline {
         stage('Deploy Frontend to Tomcat') {
             steps {
                 sh '''
-                    # Remove old frontend files
-                    sudo rm -rf /var/lib/tomcat10/webapps/reactstudentapi
-                    sudo mkdir -p /var/lib/tomcat10/webapps/reactstudentapi
-
-                    # Copy new build files
-                    sudo cp -r STUDENTAPI-REACT/dist/* /var/lib/tomcat10/webapps/reactstudentapi/
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\reactstudentapi" (
+                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\reactstudentapi"
+                )
+                mkdir "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\reactstudentapi"
+                xcopy /E /I /Y STUDENTAPI-REACT\\dist\\* "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\reactstudentapi"
                 '''
             }
         }
@@ -31,7 +30,7 @@ pipeline {
         stage('Build Backend') {
             steps {
                 dir('STUDENTAPI-SPRINGBOOT') {
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package'
                 }
             }
         }
@@ -40,11 +39,13 @@ pipeline {
         stage('Deploy Backend to Tomcat') {
             steps {
                 sh '''
-                    # Remove old WAR & exploded app
-                    sudo rm -rf /var/lib/tomcat10/webapps/springbootstudentapi*
-                    
-                    # Copy new WAR file
-                    sudo cp STUDENTAPI-SPRINGBOOT/target/*.war /var/lib/tomcat10/webapps/springbootstudentapi.war
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootstudentapi.war" (
+                    del /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootstudentapi.war"
+                )
+                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootstudentapi" (
+                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\springbootstudentapi"
+                )
+                copy "STUDENTAPI-SPRINGBOOT\\target\\*.war" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\"
                 '''
             }
         }
@@ -53,10 +54,10 @@ pipeline {
 
     post {
         success {
-            echo ' Deployment Successful!'
+            echo 'Deployment Successful!'
         }
         failure {
-            echo ' Pipeline Failed.'
+            echo 'Pipeline Failed.'
         }
     }
 }
